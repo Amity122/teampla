@@ -12,10 +12,10 @@ export default function Home() {
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <Link
-          href="/profile"
+          href="/members"
           className="rounded-lg bg-blue-600 px-4 py-3 text-center font-medium text-white hover:bg-blue-700 transition-colors"
         >
-          My Profile
+          Members
         </Link>
         <Link
           href="/randomizer"

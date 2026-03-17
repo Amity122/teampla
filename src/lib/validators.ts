@@ -50,7 +50,6 @@ export const MemberCreateSchema = z
       .number()
       .int("Must be a whole number")
       .min(0, "Cannot be negative"),
-    isAdmin: z.boolean().default(false),
   })
   .refine(
     (data) =>
@@ -71,7 +70,6 @@ export const MemberUpdateSchema = z
     shift: ShiftScheduleSchema.optional(),
     weeklySchedule: WeeklyScheduleSchema.optional(),
     activeProjectCount: z.number().int().min(0).optional(),
-    isAdmin: z.boolean().optional(),
   })
   .refine(
     (data) =>

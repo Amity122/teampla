@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/authUtils";
 import type { Member, WeeklySchedule } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const { id } = await params;
   const team = await prisma.generatedTeam.findUnique({
     where: { id },
@@ -29,6 +33,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const { id } = await params;
   const team = await prisma.generatedTeam.findUnique({ where: { id } });
   if (!team) return NextResponse.json({ error: "Team not found." }, { status: 404 });

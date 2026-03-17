@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PresetUpdateSchema } from "@/lib/validators";
+import { requireAuth } from "@/lib/authUtils";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const { id } = await params;
   const preset = await prisma.preset.findUnique({ where: { id } });
   if (!preset) return NextResponse.json({ error: "Preset not found." }, { status: 404 });
@@ -12,6 +16,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const { id } = await params;
   const preset = await prisma.preset.findUnique({ where: { id } });
   if (!preset) return NextResponse.json({ error: "Preset not found." }, { status: 404 });
@@ -40,6 +47,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const { id } = await params;
   const preset = await prisma.preset.findUnique({ where: { id } });
   if (!preset) return NextResponse.json({ error: "Preset not found." }, { status: 404 });

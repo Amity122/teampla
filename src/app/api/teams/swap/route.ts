@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { requireAuth } from "@/lib/authUtils";
 
 const SwapSchema = z.object({
   teamIdA: z.string(),
@@ -12,6 +13,9 @@ const SwapSchema = z.object({
 const SENIOR_LEVELS = ["Senior", "Lead"];
 
 export async function POST(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const body = await req.json();
   const parsed = SwapSchema.safeParse(body);
   if (!parsed.success) {

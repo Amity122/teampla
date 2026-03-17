@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/authUtils";
 import type { Member, WeeklySchedule } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const sessionId = req.nextUrl.searchParams.get("sessionId");
 
   const teams = await prisma.generatedTeam.findMany({

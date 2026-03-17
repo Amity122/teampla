@@ -40,7 +40,6 @@ export type Member = {
   shift: ShiftSchedule;
   weeklySchedule: WeeklySchedule;
   activeProjectCount: number;
-  isAdmin: boolean;
   updatedAt: string; // ISO string
 };
 

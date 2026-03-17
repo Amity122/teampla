@@ -185,13 +185,12 @@ export function generateTeams(
     });
   }
 
-  // Step 8 — Intra-team display shuffle (seniors first)
+  // Step 8 — Intra-team display order: seniors first, then ascending by project load
   for (const slot of slots) {
     const seniors = slot.filter((e) => isSenior(e.member));
-    const others = shuffle(
-      slot.filter((e) => !isSenior(e.member)),
-      random
-    );
+    const others = slot
+      .filter((e) => !isSenior(e.member))
+      .sort((a, b) => a.member.activeProjectCount - b.member.activeProjectCount);
     slot.splice(0, slot.length, ...seniors, ...others);
   }
 
@@ -259,8 +258,8 @@ export function swapMembers(
   const memberA = { ...teamA.members[idxA], manuallySwapped: true };
   const memberB = { ...teamB.members[idxB], manuallySwapped: true };
 
-  teamA.members[idxA] = { ...memberB, member: memberA.member };
-  teamB.members[idxB] = { ...memberA, member: memberB.member };
+  teamA.members[idxA] = { member: memberB.member, manuallySwapped: true };
+  teamB.members[idxB] = { member: memberA.member, manuallySwapped: true };
 
   // Advisory skill-imbalance warning (non-blocking per PRD §3.3)
   const aIsSenior = SENIOR_LEVELS.includes(memberA.member.skillLevel);

@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PresetCreateSchema } from "@/lib/validators";
+import { requireAuth } from "@/lib/authUtils";
 
 export async function GET() {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const presets = await prisma.preset.findMany({ orderBy: { name: "asc" } });
   return NextResponse.json(presets);
 }
 
 export async function POST(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
+  const { session } = authResult;
+
   const body = await req.json();
   const parsed = PresetCreateSchema.safeParse(body);
   if (!parsed.success) {
@@ -20,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   const preset = await prisma.preset.create({
-    data: { name: parsed.data.name, config: parsed.data.config },
+    data: { name: parsed.data.name, config: parsed.data.config, createdBy: session.user.id },
   });
   return NextResponse.json(preset, { status: 201 });
 }

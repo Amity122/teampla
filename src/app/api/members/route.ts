@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { MemberCreateSchema } from "@/lib/validators";
+import { requireAuth } from "@/lib/authUtils";
 import type { WeeklySchedule } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   const { searchParams } = req.nextUrl;
   const skillLevel = searchParams.get("skillLevel");
   const shift = searchParams.get("shift");
@@ -28,6 +32,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
+  const { session } = authResult;
+
   const body = await req.json();
   const parsed = MemberCreateSchema.safeParse(body);
   if (!parsed.success) {
@@ -39,6 +48,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "A member with this email already exists." }, { status: 409 });
   }
 
-  const member = await prisma.member.create({ data: parsed.data });
+  const member = await prisma.member.create({
+    data: { ...parsed.data, userId: session.user.id },
+  });
   return NextResponse.json(member, { status: 201 });
 }

@@ -17,7 +17,6 @@ export const buildMember = (overrides: Partial<Member> = {}): Member => ({
     thu: "wfh", fri: "onsite", sat: "dayoff", sun: "dayoff",
   },
   activeProjectCount: 1,
-  isAdmin: false,
   updatedAt: new Date().toISOString(),
   ...overrides,
 });

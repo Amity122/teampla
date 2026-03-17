@@ -525,3 +525,80 @@ Build in this sequence to maintain a working state at each step:
 8. **Export UI** — `ExportMenu` wired to `/api/export`
 9. **Delete Python code** — clean up after all E2E tests pass
 10. **Deploy to Vercel** — set `DATABASE_URL`, push, verify `/api/health`
+
+---
+
+## 16. Auth + Member Model Simplification (2026-03-17)
+
+**Status:** Implemented
+**Scope:** Auth, member data model, member pages
+
+### 16.1 Google SSO via Auth.js (NextAuth v5)
+
+Added Google SSO authentication using Auth.js (NextAuth v5) with the Prisma adapter.
+
+**Key design decisions:**
+
+| Decision | Rationale |
+|---|---|
+| Split-config pattern (`auth.config.ts` + `auth.ts`) | Next.js middleware runs in the Edge runtime, which cannot import Prisma. `auth.config.ts` is edge-safe (no Prisma); `auth.ts` is Node.js-only (with Prisma adapter). |
+| `session: { strategy: "jwt" }` | Prisma adapter defaults to database sessions; using JWT sessions avoids a `JWTSessionError` when middleware and API routes use different session strategies. |
+| `lh3.googleusercontent.com` in `next.config.ts` `remotePatterns` | Required for `next/image` to render Google profile avatars. |
+
+**New files:**
+- `src/auth.config.ts` — edge-safe config (providers, redirect rules)
+- `src/auth.ts` — full auth with Prisma adapter + JWT callbacks
+- `src/middleware.ts` — route protection using edge-safe config
+- `src/app/api/auth/[...nextauth]/route.ts` — Auth.js handler
+- `src/components/providers/SessionProvider.tsx` — client-side session provider
+- `src/app/(auth)/login/page.tsx` — "Sign in with Google" page
+- `src/lib/authUtils.ts` — `requireAuth()` helper for API routes
+- `src/types/next-auth.d.ts` — session type augmentation (`session.user.id`)
+
+**Prisma schema additions:** `User`, `Account`, `Session`, `VerificationToken` models (Auth.js required models).
+
+### 16.2 Removal of Admin Role Distinction
+
+v1 does not require role-based access control. All authenticated users have identical permissions.
+
+**Changes:**
+- Removed `isAdmin` field from `Member` model in Prisma schema and TypeScript types
+- Removed `requireAdmin()` helper — replaced with `requireAuth()` everywhere
+- All API routes now only check that the user is signed in (no admin gate)
+- Navbar shows all links to all authenticated users — no conditional rendering based on role
+
+### 16.3 Member Model: Self-Service Profile → Multi-Member-per-User
+
+**Old model (1:1 User → Member):**
+Each user had exactly one Member profile representing themselves. The `/profile` page was the single entry point for a user to declare their own details.
+
+**New model (1:many User → Member):**
+Any authenticated user can add multiple members to the pool. Each Member has a `userId` FK pointing to the creating user, but `userId` is no longer unique — one user can own many members.
+
+**Motivation:**
+IT department leads often need to register an entire team's worth of members, not just themselves. The self-service model required every person to log in, which created friction. The new model lets a single user (e.g., the team lead) bulk-add all members they manage.
+
+**Schema change:**
+```prisma
+// Before
+model User {
+  member Member?  // 1:1 unique
+}
+model Member {
+  userId String @unique
+}
+
+// After
+model User {
+  members Member[]  // 1:many
+}
+model Member {
+  userId String     // no @unique — multiple members per user allowed
+}
+```
+
+**Page changes:**
+- Removed: `src/app/(member)/profile/page.tsx` (self-service profile form)
+- Added: `src/app/(member)/members/page.tsx` — member pool table with Remove button
+- Added: `src/app/(member)/members/add/page.tsx` — Add Member form (reuses `ProfileForm`)
+- Updated: Navbar `"My Profile"` link → `"Members"` link pointing to `/members`
