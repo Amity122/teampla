@@ -1,7 +1,6 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { cn } from "@/lib/utils";
 import { MemberCard } from "./MemberCard";
 import type { Team } from "@/lib/types";
@@ -13,7 +12,6 @@ interface TeamCardProps {
 
 export function TeamCard({ team, disabled }: TeamCardProps) {
   const { setNodeRef, isOver } = useDroppable({ id: team.id });
-  const dragIds = team.members.map((e) => `${team.id}:${e.member.id}`);
 
   const avgLoad =
     team.members.length > 0
@@ -23,7 +21,7 @@ export function TeamCard({ team, disabled }: TeamCardProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border bg-gray-50 p-4 min-w-[220px] w-[260px]",
+        "flex flex-col gap-3 rounded-xl border bg-gray-50 p-4 min-w-[220px] w-[260px] transition-colors",
         isOver && "border-blue-400 bg-blue-50"
       )}
     >
@@ -38,22 +36,21 @@ export function TeamCard({ team, disabled }: TeamCardProps) {
         ref={setNodeRef}
         className={cn(
           "flex flex-col gap-2 min-h-[80px] rounded-lg p-1 transition-colors",
-          isOver && "bg-blue-100/50"
+          isOver && "bg-blue-100/50",
+          team.members.length === 0 && isOver && "border-2 border-dashed border-blue-300"
         )}
       >
-        <SortableContext items={dragIds} strategy={verticalListSortingStrategy}>
-          {team.members.map((entry) => (
-            <MemberCard
-              key={entry.member.id}
-              member={entry.member}
-              teamId={team.id}
-              manuallySwapped={entry.manuallySwapped}
-              disabled={disabled}
-            />
-          ))}
-        </SortableContext>
+        {team.members.map((entry) => (
+          <MemberCard
+            key={entry.member.id}
+            member={entry.member}
+            teamId={team.id}
+            manuallySwapped={entry.manuallySwapped}
+            disabled={disabled}
+          />
+        ))}
         {team.members.length === 0 && (
-          <p className="text-center text-xs text-gray-400 py-4">Drop members here</p>
+          <p className="text-center text-xs text-gray-400 py-4">No members</p>
         )}
       </div>
 

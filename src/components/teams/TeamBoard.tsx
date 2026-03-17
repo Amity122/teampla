@@ -4,7 +4,9 @@ import {
   DndContext,
   DragEndEvent,
   DragOverlay,
+  DragStartEvent,
   PointerSensor,
+  closestCorners,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -16,34 +18,58 @@ import { useTeamsStore } from "@/store/teamsStore";
 import type { Member } from "@/lib/types";
 
 export function TeamBoard() {
-  const { currentTeams, swapHistory, lastSwapWarning, swapMembersBetweenTeams, undoLastSwap, resetToGenerated, clearWarning } =
-    useTeamsStore();
+  const {
+    currentTeams,
+    swapHistory,
+    lastSwapWarning,
+    swapMembersBetweenTeams,
+    undoLastSwap,
+    resetToGenerated,
+    clearWarning,
+  } = useTeamsStore();
 
   const [activeMember, setActiveMember] = useState<{ member: Member; teamId: string } | null>(null);
+  const [dropError, setDropError] = useState<string | null>(null);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  function handleDragStart(event: DragStartEvent) {
+    setDropError(null);
+    const [teamId, memberId] = String(event.active.id).split(":");
+    const team = currentTeams.find((t) => t.id === teamId);
+    const entry = team?.members.find((m) => m.member.id === memberId);
+    if (entry) setActiveMember({ member: entry.member, teamId });
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveMember(null);
     if (!over || active.id === over.id) return;
 
-    // active.id format: "teamId:memberId"
     const [fromTeamId, fromMemberId] = String(active.id).split(":");
     const overStr = String(over.id);
 
-    // Determine drop target team and member
     let toTeamId: string;
     let toMemberId: string | null = null;
 
     if (overStr.includes(":")) {
-      // Dropped onto another member card
+      // Dropped onto a member card — swap those two members
       [toTeamId, toMemberId] = overStr.split(":");
     } else {
       // Dropped onto a team container
       toTeamId = overStr;
       const toTeam = currentTeams.find((t) => t.id === toTeamId);
-      if (!toTeam || toTeam.members.length === 0) return;
+      if (!toTeam) return;
+
+      if (toTeam.members.length === 0) {
+        setDropError("Can't drop onto an empty team — swap requires a member to exchange with.");
+        setTimeout(() => setDropError(null), 3000);
+        return;
+      }
+
+      // Swap with the last member in that team
       toMemberId = toTeam.members[toTeam.members.length - 1].member.id;
     }
 
@@ -91,21 +117,35 @@ export function TeamBoard() {
         </div>
       )}
 
+      {/* Drop error */}
+      {dropError && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <span>✕</span>
+          <span>{dropError}</span>
+        </div>
+      )}
+
       {/* Team board */}
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={(e) => {
-        const [teamId, memberId] = String(e.active.id).split(":");
-        const team = currentTeams.find((t) => t.id === teamId);
-        const entry = team?.members.find((m) => m.member.id === memberId);
-        if (entry) setActiveMember({ member: entry.member, teamId });
-      }}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         <div className="flex gap-4 overflow-x-auto pb-4">
           {currentTeams.map((team) => (
             <TeamCard key={team.id} team={team} />
           ))}
         </div>
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeMember && (
-            <MemberCard member={activeMember.member} teamId={activeMember.teamId} disabled />
+            <div className="rotate-2 opacity-95 shadow-xl">
+              <MemberCard
+                member={activeMember.member}
+                teamId={activeMember.teamId}
+                disabled
+              />
+            </div>
           )}
         </DragOverlay>
       </DndContext>
