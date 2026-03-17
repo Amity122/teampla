@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
-import Navbar from "@/components/layout/Navbar";
+import Sidebar from "@/components/layout/Sidebar";
 
 export const metadata: Metadata = {
   title: "Teampla",
@@ -13,8 +13,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
         <SessionProvider>
-          <Navbar />
-          <main>{children}</main>
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <main className="flex-1 pl-16">{children}</main>
+          </div>
         </SessionProvider>
       </body>
     </html>

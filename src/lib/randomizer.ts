@@ -18,6 +18,7 @@ import type {
   ConflictInfo,
   GenerateTeamsResponse,
   Member,
+  PairingConstraint,
   RandomizerConfig,
   SkillLevel,
   Team,
@@ -61,6 +62,80 @@ function isSenior(m: Member): boolean {
 
 function newId(): string {
   return crypto.randomUUID();
+}
+
+// ─── Pairing constraint enforcement ──────────────────────────────────────────
+
+type Slot = Array<{ member: Member; manuallySwapped: boolean }>;
+
+/**
+ * Best-effort: after distribution, try to honor AVOID and PREFER constraints
+ * by swapping members between teams. Adds CONSTRAINT_VIOLATED conflicts for
+ * pairs that could not be resolved.
+ */
+function enforcePairingConstraints(
+  slots: Slot[],
+  constraints: PairingConstraint[],
+  conflicts: ConflictInfo[]
+): void {
+  const findTeamIdx = (memberId: string): number =>
+    slots.findIndex((slot) => slot.some((e) => e.member.id === memberId));
+
+  for (const constraint of constraints) {
+    const { memberIdA, memberIdB, type } = constraint;
+    const idxA = findTeamIdx(memberIdA);
+    const idxB = findTeamIdx(memberIdB);
+
+    // One or both members not in pool — skip silently
+    if (idxA === -1 || idxB === -1) continue;
+
+    if (type === "avoid" && idxA === idxB) {
+      // They're on the same team — try to swap B to a different team
+      const targetIdx = slots.findIndex((_, i) => i !== idxA);
+      if (targetIdx === -1) {
+        conflicts.push({
+          type: "CONSTRAINT_VIOLATED",
+          message: `Could not separate members (avoid constraint) — not enough teams.`,
+        });
+        continue;
+      }
+      // Find B in the slot and swap with the first non-constrained member in target
+      const bIdx = slots[idxA].findIndex((e) => e.member.id === memberIdB);
+      const swapCandidateIdx = slots[targetIdx].findIndex(
+        (e) => e.member.id !== memberIdA && e.member.id !== memberIdB
+      );
+      if (swapCandidateIdx === -1) {
+        conflicts.push({
+          type: "CONSTRAINT_VIOLATED",
+          message: `Could not separate members (avoid constraint) — no suitable swap candidate.`,
+        });
+        continue;
+      }
+      // Perform the swap
+      const entryB = slots[idxA][bIdx];
+      const entryTarget = slots[targetIdx][swapCandidateIdx];
+      slots[idxA][bIdx] = entryTarget;
+      slots[targetIdx][swapCandidateIdx] = entryB;
+    } else if (type === "prefer" && idxA !== idxB) {
+      // They're on different teams — try to move B next to A
+      const bIdx = slots[idxB].findIndex((e) => e.member.id === memberIdB);
+      // Find a swap candidate in team A (not A itself, not already constrained)
+      const swapCandidateIdx = slots[idxA].findIndex(
+        (e) => e.member.id !== memberIdA && e.member.id !== memberIdB
+      );
+      if (swapCandidateIdx === -1) {
+        conflicts.push({
+          type: "CONSTRAINT_VIOLATED",
+          message: `Could not group preferred members — no swap candidate available in the target team.`,
+        });
+        continue;
+      }
+      const entryB = slots[idxB][bIdx];
+      const entrySwap = slots[idxA][swapCandidateIdx];
+      slots[idxB][bIdx] = entrySwap;
+      slots[idxA][swapCandidateIdx] = entryB;
+    }
+  }
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -192,6 +267,11 @@ export function generateTeams(
       .filter((e) => !isSenior(e.member))
       .sort((a, b) => a.member.activeProjectCount - b.member.activeProjectCount);
     slot.splice(0, slot.length, ...seniors, ...others);
+  }
+
+  // Step 9a — Enforce pairing constraints (best-effort post-processing)
+  if (config.pairingConstraints && config.pairingConstraints.length > 0) {
+    enforcePairingConstraints(slots, config.pairingConstraints, conflicts);
   }
 
   // Step 9 — Validate sizes

@@ -1,22 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useRandomizerStore } from "@/store/randomizerStore";
 import { useTeamsStore } from "@/store/teamsStore";
 import { ConflictBanner } from "./ConflictBanner";
-import type { GenerateTeamsResponse, PrimaryTeam } from "@/lib/types";
+import type { GenerateTeamsResponse, Member, PairingConstraint, PrimaryTeam } from "@/lib/types";
 
 const SPECIALIZATION_OPTIONS: PrimaryTeam[] = [
   "Backend", "Frontend", "DevOps", "QA / Testing",
   "Mobile", "Data / Analytics", "Full Stack",
 ];
 
+const MAX_CONSTRAINTS = 7;
+
 export function RandomizerPanel() {
   const { config, isGenerating, setConfig, setGenerating } = useRandomizerStore();
   const { setGeneratedTeams, conflicts } = useTeamsStore();
   const [error, setError] = useState<string | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  useEffect(() => {
+    fetch("/api/members")
+      .then((r) => r.json())
+      .then((data: Member[]) => setMembers(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  const constraints = config.pairingConstraints ?? [];
+  const avoidConstraints = constraints.filter((c) => c.type === "avoid");
+  const preferConstraints = constraints.filter((c) => c.type === "prefer");
+
+  function addConstraint(type: "avoid" | "prefer") {
+    const current = type === "avoid" ? avoidConstraints : preferConstraints;
+    if (current.length >= MAX_CONSTRAINTS) return;
+    setConfig({
+      pairingConstraints: [
+        ...constraints,
+        { memberIdA: "", memberIdB: "", type },
+      ],
+    });
+  }
+
+  function updateConstraint(index: number, patch: Partial<PairingConstraint>) {
+    const updated = constraints.map((c, i) => (i === index ? { ...c, ...patch } : c));
+    setConfig({ pairingConstraints: updated });
+  }
+
+  function removeConstraint(index: number) {
+    setConfig({ pairingConstraints: constraints.filter((_, i) => i !== index) });
+  }
 
   async function handleGenerate() {
     setGenerating(true);
@@ -123,6 +157,122 @@ export function RandomizerPanel() {
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* Pairing Constraints */}
+      <div className="flex flex-col gap-3">
+        <p className="text-sm font-medium text-gray-700">Member Pairing Constraints</p>
+        <p className="text-xs text-gray-400">Up to {MAX_CONSTRAINTS} pairs each. Best-effort — a warning is shown if a constraint can't be honored.</p>
+
+        {/* Avoid pairs */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-rose-600">
+              🚫 Should NOT be on the same team ({avoidConstraints.length}/{MAX_CONSTRAINTS})
+            </span>
+            <button
+              type="button"
+              disabled={avoidConstraints.length >= MAX_CONSTRAINTS || members.length < 2}
+              onClick={() => addConstraint("avoid")}
+              className="text-xs text-rose-600 hover:text-rose-800 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              + Add pair
+            </button>
+          </div>
+          {constraints.map((c, i) =>
+            c.type !== "avoid" ? null : (
+              <div key={i} className="flex items-center gap-2">
+                <select
+                  value={c.memberIdA}
+                  onChange={(e) => updateConstraint(i, { memberIdA: e.target.value })}
+                  className="flex-1 rounded-md border border-gray-200 text-xs px-2 py-1.5 bg-white text-gray-700"
+                >
+                  <option value="">— Member A —</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdB}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-gray-400 shrink-0">not with</span>
+                <select
+                  value={c.memberIdB}
+                  onChange={(e) => updateConstraint(i, { memberIdB: e.target.value })}
+                  className="flex-1 rounded-md border border-gray-200 text-xs px-2 py-1.5 bg-white text-gray-700"
+                >
+                  <option value="">— Member B —</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdA}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeConstraint(i)}
+                  className="text-gray-400 hover:text-red-500 shrink-0 text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Prefer pairs */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-emerald-600">
+              ✅ Works well together ({preferConstraints.length}/{MAX_CONSTRAINTS})
+            </span>
+            <button
+              type="button"
+              disabled={preferConstraints.length >= MAX_CONSTRAINTS || members.length < 2}
+              onClick={() => addConstraint("prefer")}
+              className="text-xs text-emerald-600 hover:text-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              + Add pair
+            </button>
+          </div>
+          {constraints.map((c, i) =>
+            c.type !== "prefer" ? null : (
+              <div key={i} className="flex items-center gap-2">
+                <select
+                  value={c.memberIdA}
+                  onChange={(e) => updateConstraint(i, { memberIdA: e.target.value })}
+                  className="flex-1 rounded-md border border-gray-200 text-xs px-2 py-1.5 bg-white text-gray-700"
+                >
+                  <option value="">— Member A —</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdB}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-gray-400 shrink-0">with</span>
+                <select
+                  value={c.memberIdB}
+                  onChange={(e) => updateConstraint(i, { memberIdB: e.target.value })}
+                  className="flex-1 rounded-md border border-gray-200 text-xs px-2 py-1.5 bg-white text-gray-700"
+                >
+                  <option value="">— Member B —</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdA}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeConstraint(i)}
+                  className="text-gray-400 hover:text-red-500 shrink-0 text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          )}
         </div>
       </div>
 

@@ -12,6 +12,7 @@ const DEFAULT_CONFIG: RandomizerConfig = {
   groupByShift: false,
   memberIds: undefined,
   seed: undefined,
+  pairingConstraints: [],
 };
 
 interface RandomizerState {

@@ -68,6 +68,14 @@ export type Preset = {
 
 // ─── Randomizer ───────────────────────────────────────────────────────────────
 
+export type ConstraintType = "avoid" | "prefer";
+
+export type PairingConstraint = {
+  memberIdA: string;
+  memberIdB: string;
+  type: ConstraintType;
+};
+
 export type RandomizerConfig = {
   numTeams: number;
   minMembers?: number;
@@ -77,6 +85,7 @@ export type RandomizerConfig = {
   groupByShift: boolean;
   memberIds?: string[];
   seed?: number;
+  pairingConstraints?: PairingConstraint[];
 };
 
 export type ConflictInfo = {
@@ -84,7 +93,8 @@ export type ConflictInfo = {
     | "EMPTY_POOL"
     | "INSUFFICIENT_SENIORS"
     | "INSUFFICIENT_SPECIALIZATION"
-    | "SIZE_VIOLATION";
+    | "SIZE_VIOLATION"
+    | "CONSTRAINT_VIOLATED";
   message: string;
 };
 

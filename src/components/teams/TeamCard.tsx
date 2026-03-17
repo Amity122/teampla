@@ -45,6 +45,7 @@ export function TeamCard({ team, disabled }: TeamCardProps) {
             key={entry.member.id}
             member={entry.member}
             teamId={team.id}
+            teamName={team.name}
             manuallySwapped={entry.manuallySwapped}
             disabled={disabled}
           />
