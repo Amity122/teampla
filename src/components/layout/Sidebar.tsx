@@ -73,7 +73,7 @@ export default function Sidebar() {
   const user = session.user;
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-16 flex flex-col items-center bg-white border-r border-gray-200 py-4 z-50">
+    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-16 flex-col items-center bg-white border-r border-gray-200 py-4 z-50">
       {/* Logo */}
       <Link
         href="/"

@@ -138,7 +138,7 @@ export function TeamBoard() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex flex-col gap-3 md:flex-row md:gap-4 md:overflow-x-auto pb-4">
           {currentTeams.map((team) => (
             <TeamCard key={team.id} team={team} />
           ))}

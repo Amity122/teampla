@@ -260,6 +260,30 @@ User logs in → Goes to /members
 
 ---
 
+## 5.5 Responsive Layout
+
+Teampla uses a single-page workspace layout that adapts across screen sizes.
+
+### Desktop (≥ md / 768px)
+
+- Fixed left panel (268px) with two stacked sections:
+  - **Top:** Randomizer settings (scrollable, capped at 58vh)
+  - **Bottom:** Members list with search (fills remaining height)
+- Main area (flex-1): Team Board with header (title + export controls)
+- Icon sidebar (64px, fixed) visible on the left edge
+
+### Mobile (< md / 768px)
+
+- Icon sidebar hidden; replaced by a **bottom tab bar** with three tabs:
+  - **Randomizer** — full-screen scrollable randomizer settings
+  - **Members** — full-screen members list with search and add modal
+  - **Teams** — full-screen team board (vertical card stack, scrollable)
+- A green dot indicator appears on the Teams tab when teams have been generated
+- Team cards stack vertically on mobile; horizontal scroll is used on desktop
+- Add Member opens as a modal on all screen sizes (no separate page navigation)
+
+---
+
 ## 6. UX & Design Principles
 
 - **Self-service first** — Members manage their own data; no manual admin entry per person

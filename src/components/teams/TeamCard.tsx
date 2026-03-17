@@ -21,7 +21,7 @@ export function TeamCard({ team, disabled }: TeamCardProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-lg border bg-gray-50 p-3 min-w-[190px] w-[210px] transition-colors",
+        "flex flex-col gap-2 rounded-lg border bg-gray-50 p-3 w-full md:min-w-[220px] md:w-[240px] transition-colors",
         isOver && "border-blue-400 bg-blue-50"
       )}
     >

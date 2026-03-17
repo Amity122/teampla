@@ -7,6 +7,6 @@ interface WorkloadBadgeProps {
 
 export function WorkloadBadge({ count }: WorkloadBadgeProps) {
   const color = workloadColor(count);
-  const label = `${count} project${count !== 1 ? "s" : ""}`;
+  const label = `${count}p`;
   return <Badge variant={color}>{label}</Badge>;
 }
