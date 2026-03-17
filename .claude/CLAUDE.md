@@ -25,7 +25,7 @@ Manually forming project teams in an IT department is time-consuming and often l
 
 ### 1.3 Goals
 
-- Allow each IT member to self-declare their profile (skill level, team, shift, schedule)
+- Allow any logged-in user to add members to the pool (skill level, team, shift, schedule, project count)
 - Generate balanced teams based on skill, availability, and current project load
 - Prioritize members with fewer active projects to prevent task overload
 - Provide a drag-to-swap UI for manual adjustments after randomization
@@ -36,7 +36,7 @@ Manually forming project teams in an IT department is time-consuming and often l
 - Payroll or HR integration
 - Cross-department team formation (IT only for v1)
 - Real-time project tracking or task management
-- Role-based access control beyond basic member/admin distinction
+- Role-based access control (v1: signed in = full access)
 
 ---
 
@@ -44,9 +44,9 @@ Manually forming project teams in an IT department is time-consuming and often l
 
 | Role | Description |
 |---|---|
-| **IT Member** | Inputs their own profile data; subject to team assignment |
-| **Team Lead / Admin** | Manages the randomizer, reviews and adjusts generated teams, exports results |
-| **IT Manager** | Views generated teams for planning; may have read-only access |
+| **Logged-in User** | Any authenticated user — can add members to the pool, run the randomizer, manage presets, and export results |
+
+> **v1 simplification:** No admin/member role distinction. All authenticated users have full access to all features.
 
 ---
 
@@ -54,7 +54,7 @@ Manually forming project teams in an IT department is time-consuming and often l
 
 ### 3.1 Member Profile Input
 
-Each IT member fills out a self-service profile with the following fields:
+Any logged-in user can add one or more members to the pool via the **Add Member** form (`/members/add`). Each member is owned by the user who created them (`userId` FK). A single user can own many members. The fields for each member are:
 
 #### 3.1.1 Skill Level
 
@@ -166,19 +166,19 @@ Generated teams can be exported in multiple formats:
 
 ## 4. User Flows
 
-### 4.1 Member Profile Setup
+### 4.1 Adding a Member to the Pool
 
 ```
-Member visits Teampla → Signs in (SSO or invite link)
-→ Fills out profile form (skill, team, shift, schedule, project count)
-→ Saves profile → Confirmation screen
-→ Profile is now visible to admins in the member pool
+User signs in with Google → Goes to /members → Clicks "+ Add Member"
+→ Fills out member form (name, email, skill, team, shift, schedule, project count)
+→ Saves → Member appears in the pool table at /members
+→ Member is now available for the next randomizer run
 ```
 
-### 4.2 Admin: Generate Teams
+### 4.2 Generate Teams
 
 ```
-Admin logs in → Opens Randomizer
+User logs in → Opens Randomizer
 → Reviews member pool (filter by availability, shift, skill)
 → Sets constraints (team count, size, balance rules)
 → Clicks "Generate Teams"
@@ -186,12 +186,12 @@ Admin logs in → Opens Randomizer
 → Saves preset (optional) → Exports to Slack / CSV
 ```
 
-### 4.3 Member Updates Profile
+### 4.3 Update a Member's Details
 
 ```
-Member logs in → Goes to "My Profile"
-→ Updates active project count or schedule
-→ Saves → Changes reflected in next randomizer run
+User logs in → Goes to /members
+→ (future: click member row to edit) or removes and re-adds with updated info
+→ Changes reflected in next randomizer run
 ```
 
 ---
@@ -238,8 +238,8 @@ Member logs in → Goes to "My Profile"
 - **Self-service first** — Members manage their own data; no manual admin entry per person
 - **Transparency** — Members can see how they are categorized (though not other members' project counts)
 - **Non-blocking overrides** — Admins always have final say; constraints are warnings, not hard locks in the UI
-- **Mobile-aware** — Profile input should work on mobile; randomizer UI is desktop-first
-- **Minimal friction** — Profile setup should take under 3 minutes
+- **Mobile-aware** — Add Member form should work on mobile; randomizer UI is desktop-first
+- **Minimal friction** — Adding a member should take under 3 minutes
 
 ---
 
@@ -297,7 +297,7 @@ Member logs in → Goes to "My Profile"
 
 | Metric | Target |
 |---|---|
-| Profile completion rate | ≥ 90% of IT members have a complete profile |
+| Member pool coverage | ≥ 90% of IT members added to the pool with complete data |
 | Time to generate teams | < 30 seconds for up to 50 members |
 | Admin satisfaction (survey) | ≥ 4/5 rating on fairness of generated teams |
 | Overloaded member rate | 0 members with `active_project_count >= 3` assigned before lighter members |
@@ -752,21 +752,23 @@ These are integration/E2E scenarios that validate full user flows.
 
 | ID | Scenario | Steps | Expected Result |
 |---|---|---|---|
-| **E2E-01** | Member completes profile setup | 1. Visit Teampla → 2. Sign in → 3. Fill all profile fields → 4. Save | Profile saved; member appears in admin's member pool |
-| **E2E-02** | Admin generates a balanced team of 4 | 1. Login as admin → 2. Set: 1 team, 4 members → 3. Click Generate | One team of 4 members is displayed with skill and load data |
-| **E2E-03** | Admin generates teams with skill balance constraint | 1. 8 members (2 Senior, 2 Mid, 4 Junior) → 2. Generate 2 teams with skill balance ON | Each team has 1 Senior, 1 Mid, 2 Junior |
+| ID | Scenario | Steps | Expected Result |
+|---|---|---|---|
+| **E2E-01** | User adds a member to the pool | 1. Sign in → 2. Go to /members → 3. Click "+ Add Member" → 4. Fill all fields → 5. Save | Member saved; appears in the pool table at /members |
+| **E2E-02** | User generates a balanced team of 4 | 1. Login → 2. Set: 1 team, 4 members → 3. Click Generate | One team of 4 members is displayed with skill and load data |
+| **E2E-03** | Generate teams with skill balance constraint | 1. 8 members (2 Senior, 2 Mid, 4 Junior) → 2. Generate 2 teams with skill balance ON | Each team has 1 Senior, 1 Mid, 2 Junior |
 | **E2E-04** | Project load priority is respected | 1. Member A has 0 projects, Member B has 3 → 2. Generate 1 team, 1 slot remaining | Member A is assigned first; B is deprioritized |
-| **E2E-05** | Admin swaps two members post-generation | 1. Generate teams → 2. Drag member from Team 1 to Team 2 | Members swap; both cards update; swap is flagged as manual |
+| **E2E-05** | Swap two members post-generation | 1. Generate teams → 2. Drag member from Team 1 to Team 2 | Members swap; both cards update; swap is flagged as manual |
 | **E2E-06** | Undo a swap | 1. Perform a swap → 2. Click Undo | Teams revert to pre-swap state |
 | **E2E-07** | Reset all manual swaps | 1. Perform 3 swaps → 2. Click "Reset to Generated" | All teams revert to the originally generated state |
 | **E2E-08** | Save and reload a preset | 1. Configure randomizer → 2. Save as "Sprint 11" → 3. Reload page → 4. Load "Sprint 11" | Randomizer fields are pre-filled with saved config |
 | **E2E-09** | Export teams to Slack format | 1. Generate teams → 2. Click "Export → Slack" | Formatted text is copied; pasting into Slack renders correctly |
 | **E2E-10** | Export teams to CSV | 1. Generate teams → 2. Click "Export → CSV" | A `.csv` file downloads with correct headers and all member data |
-| **E2E-11** | Profile update reflects in next randomizer run | 1. Member updates project count from 1 to 3 → 2. Admin runs randomizer | Updated count is used in load-balancing calculation |
-| **E2E-12** | Constraint conflict is surfaced for admin | 1. Only 1 Senior in pool → 2. Generate 3 teams with Senior-per-team required | Teams are generated; a conflict warning displays for teams missing a Senior |
-| **E2E-13** | Incomplete profile is rejected on save | 1. Fill only name and email → 2. Click Save | Validation errors shown per missing field; form not submitted |
-| **E2E-14** | Member cannot view other members' project counts | 1. Login as member → 2. Navigate to team view or member list | Own profile visible; other members' project counts are hidden |
-| **E2E-15** | Performance: generate teams for 50 members in under 30s | 1. Load 50 member profiles → 2. Generate 5 teams of 10 | Teams generated and rendered in < 30 seconds |
+| **E2E-11** | Member data update reflects in next randomizer run | 1. Remove and re-add member with updated project count → 2. Run randomizer | Updated count is used in load-balancing calculation |
+| **E2E-12** | Constraint conflict is surfaced | 1. Only 1 Senior in pool → 2. Generate 3 teams with Senior-per-team required | Teams are generated; a conflict warning displays for teams missing a Senior |
+| **E2E-13** | Incomplete Add Member form is rejected on save | 1. Fill only name and email → 2. Click Save | Validation errors shown per missing field; form not submitted |
+| **E2E-14** | Member cannot view other members' project counts | 1. Login → 2. Navigate to team view or member list | Only names and roles visible; project counts hidden from list view |
+| **E2E-15** | Performance: generate teams for 50 members in under 30s | 1. Load 50 members in pool → 2. Generate 5 teams of 10 | Teams generated and rendered in < 30 seconds |
 
 ---
 
