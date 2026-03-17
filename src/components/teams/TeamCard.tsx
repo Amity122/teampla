@@ -21,21 +21,21 @@ export function TeamCard({ team, disabled }: TeamCardProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border bg-gray-50 p-4 min-w-[220px] w-[260px] transition-colors",
+        "flex flex-col gap-2 rounded-lg border bg-gray-50 p-3 min-w-[190px] w-[210px] transition-colors",
         isOver && "border-blue-400 bg-blue-50"
       )}
     >
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-800">{team.name}</h3>
-        <span className="text-xs text-gray-400">
-          {team.members.length} member{team.members.length !== 1 ? "s" : ""}
+        <h3 className="text-xs font-semibold text-gray-800">{team.name}</h3>
+        <span className="text-[10px] text-gray-400">
+          {team.members.length}m
         </span>
       </div>
 
       <div
         ref={setNodeRef}
         className={cn(
-          "flex flex-col gap-2 min-h-[80px] rounded-lg p-1 transition-colors",
+          "flex flex-col gap-1.5 min-h-[60px] rounded-md p-1 transition-colors",
           isOver && "bg-blue-100/50",
           team.members.length === 0 && isOver && "border-2 border-dashed border-blue-300"
         )}
@@ -51,12 +51,12 @@ export function TeamCard({ team, disabled }: TeamCardProps) {
           />
         ))}
         {team.members.length === 0 && (
-          <p className="text-center text-xs text-gray-400 py-4">No members</p>
+          <p className="text-center text-[10px] text-gray-400 py-3">No members</p>
         )}
       </div>
 
-      <p className="text-xs text-gray-400 border-t pt-2">
-        Avg load: {avgLoad} projects
+      <p className="text-[10px] text-gray-400 border-t pt-1.5">
+        Avg load: {avgLoad} proj.
       </p>
     </div>
   );

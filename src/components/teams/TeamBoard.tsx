@@ -92,32 +92,22 @@ export function TeamBoard() {
   return (
     <div className="flex flex-col gap-4">
       {/* Controls */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={swapHistory.length === 0}
-          onClick={undoLastSwap}
-        >
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <Button variant="secondary" size="sm" disabled={swapHistory.length === 0} onClick={undoLastSwap}>
           ↩ Undo
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={swapHistory.length === 0}
-          onClick={resetToGenerated}
-        >
-          Reset to Generated
+        <Button variant="ghost" size="sm" disabled={swapHistory.length === 0} onClick={resetToGenerated}>
+          Reset
         </Button>
       </div>
 
       {/* Swap warnings */}
       {lastSwapWarnings.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           {lastSwapWarnings.map((w, i) => (
             <div
               key={i}
-              className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
+              className={`flex items-start gap-2 rounded-md border px-2.5 py-2 text-xs ${
                 w.type === "CONSTRAINT_VIOLATED"
                   ? "border-red-200 bg-red-50 text-red-700"
                   : "border-amber-200 bg-amber-50 text-amber-700"
@@ -126,12 +116,7 @@ export function TeamBoard() {
               <span>{w.type === "CONSTRAINT_VIOLATED" ? "🚫" : "⚠️"}</span>
               <span className="flex-1">{w.message}</span>
               {i === 0 && (
-                <button
-                  onClick={clearWarning}
-                  className="text-gray-400 hover:text-gray-600 shrink-0"
-                >
-                  ✕
-                </button>
+                <button onClick={clearWarning} className="text-gray-400 hover:text-gray-600 shrink-0">✕</button>
               )}
             </div>
           ))}
@@ -140,7 +125,7 @@ export function TeamBoard() {
 
       {/* Drop error */}
       {dropError && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-2.5 py-2 text-xs text-red-700">
           <span>✕</span>
           <span>{dropError}</span>
         </div>

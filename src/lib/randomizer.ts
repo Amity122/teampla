@@ -209,7 +209,7 @@ export function generateTeams(
       if (!candidate) {
         conflicts.push({
           type: "INSUFFICIENT_SPECIALIZATION",
-          message: `No available ${spec} member for team ${ti + 1}.`,
+          message: `No available ${spec} member for ${teamName(ti)}.`,
         });
         continue;
       }
@@ -279,19 +279,19 @@ export function generateTeams(
     if (config.minMembers != null && slot.length < config.minMembers) {
       conflicts.push({
         type: "SIZE_VIOLATION",
-        message: `Team ${i + 1} has ${slot.length} member(s), below minimum of ${config.minMembers}.`,
+        message: `${teamName(i)} has ${slot.length} member(s), below minimum of ${config.minMembers}.`,
       });
     }
     if (config.maxMembers != null && slot.length > config.maxMembers) {
       conflicts.push({
         type: "SIZE_VIOLATION",
-        message: `Team ${i + 1} has ${slot.length} member(s), above maximum of ${config.maxMembers}.`,
+        message: `${teamName(i)} has ${slot.length} member(s), above maximum of ${config.maxMembers}.`,
       });
     }
     if (config.requireSeniorPerTeam && !slot.some((e) => isSenior(e.member))) {
       conflicts.push({
         type: "INSUFFICIENT_SENIORS",
-        message: `Team ${i + 1} has no Senior or Lead member.`,
+        message: `${teamName(i)} has no Senior or Lead member.`,
       });
     }
   });

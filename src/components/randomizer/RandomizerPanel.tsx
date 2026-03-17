@@ -84,62 +84,60 @@ export function RandomizerPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-800">Randomizer Settings</h2>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-3 gap-2">
         <Input
-          label="Number of Teams"
+          label="Teams"
           type="number"
           min={1}
           value={config.numTeams}
           onChange={(e) => setConfig({ numTeams: parseInt(e.target.value, 10) || 1 })}
         />
         <Input
-          label="Min Members / Team"
+          label="Min / Team"
           type="number"
           min={1}
-          placeholder="No minimum"
+          placeholder="—"
           value={config.minMembers ?? ""}
           onChange={(e) => setConfig({ minMembers: e.target.value ? parseInt(e.target.value, 10) : undefined })}
         />
         <Input
-          label="Max Members / Team"
+          label="Max / Team"
           type="number"
           min={1}
-          placeholder="No maximum"
+          placeholder="—"
           value={config.maxMembers ?? ""}
           onChange={(e) => setConfig({ maxMembers: e.target.value ? parseInt(e.target.value, 10) : undefined })}
         />
       </div>
 
       {/* Constraints */}
-      <div className="flex flex-col gap-3">
-        <p className="text-sm font-medium text-gray-700">Constraints</p>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+      <div className="flex flex-col gap-1.5">
+        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Constraints</p>
+        <label className="flex items-center gap-2 text-[11px] text-gray-700 cursor-pointer">
           <input
             type="checkbox"
             checked={config.requireSeniorPerTeam}
             onChange={(e) => setConfig({ requireSeniorPerTeam: e.target.checked })}
             className="rounded"
           />
-          Require at least one Senior / Lead per team
+          Require Senior / Lead per team
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-[11px] text-gray-700 cursor-pointer">
           <input
             type="checkbox"
             checked={config.groupByShift}
             onChange={(e) => setConfig({ groupByShift: e.target.checked })}
             className="rounded"
           />
-          Prefer shift compatibility grouping
+          Prefer shift compatibility
         </label>
       </div>
 
       {/* Required specializations */}
-      <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-gray-700">Required Specializations (per team)</p>
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-1.5">
+        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Required Specializations</p>
+        <div className="flex flex-wrap gap-1">
           {SPECIALIZATION_OPTIONS.map((spec) => {
             const active = config.requiredSpecializations.includes(spec);
             return (
@@ -147,10 +145,10 @@ export function RandomizerPanel() {
                 key={spec}
                 type="button"
                 onClick={() => toggleSpec(spec)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors ${
                   active
                     ? "border-blue-500 bg-blue-100 text-blue-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                    : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
                 }`}
               >
                 {spec}
@@ -161,115 +159,94 @@ export function RandomizerPanel() {
       </div>
 
       {/* Pairing Constraints */}
-      <div className="flex flex-col gap-3">
-        <p className="text-sm font-medium text-gray-700">Member Pairing Constraints</p>
-        <p className="text-xs text-gray-400">Up to {MAX_CONSTRAINTS} pairs each. Best-effort — a warning is shown if a constraint can't be honored.</p>
+      <div className="flex flex-col gap-2">
+        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Pairing Constraints</p>
 
         {/* Avoid pairs */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-rose-600">
-              🚫 Should NOT be on the same team ({avoidConstraints.length}/{MAX_CONSTRAINTS})
+            <span className="text-[10px] font-medium text-rose-600">
+              🚫 Not same team ({avoidConstraints.length}/{MAX_CONSTRAINTS})
             </span>
             <button
               type="button"
               disabled={avoidConstraints.length >= MAX_CONSTRAINTS || members.length < 2}
               onClick={() => addConstraint("avoid")}
-              className="text-xs text-rose-600 hover:text-rose-800 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-[10px] text-rose-600 hover:text-rose-800 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              + Add pair
+              + Add
             </button>
           </div>
           {constraints.map((c, i) =>
             c.type !== "avoid" ? null : (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex items-center gap-1">
                 <select
                   value={c.memberIdA}
                   onChange={(e) => updateConstraint(i, { memberIdA: e.target.value })}
-                  className="flex-1 rounded-md border border-gray-200 text-xs px-2 py-1.5 bg-white text-gray-700"
+                  className="flex-1 rounded border border-gray-200 text-[10px] px-1.5 py-1 bg-white text-gray-700 min-w-0"
                 >
-                  <option value="">— Member A —</option>
+                  <option value="">Member A</option>
                   {members.map((m) => (
-                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdB}>
-                      {m.name}
-                    </option>
+                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdB}>{m.name}</option>
                   ))}
                 </select>
-                <span className="text-xs text-gray-400 shrink-0">not with</span>
+                <span className="text-[10px] text-gray-400 shrink-0">✕</span>
                 <select
                   value={c.memberIdB}
                   onChange={(e) => updateConstraint(i, { memberIdB: e.target.value })}
-                  className="flex-1 rounded-md border border-gray-200 text-xs px-2 py-1.5 bg-white text-gray-700"
+                  className="flex-1 rounded border border-gray-200 text-[10px] px-1.5 py-1 bg-white text-gray-700 min-w-0"
                 >
-                  <option value="">— Member B —</option>
+                  <option value="">Member B</option>
                   {members.map((m) => (
-                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdA}>
-                      {m.name}
-                    </option>
+                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdA}>{m.name}</option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={() => removeConstraint(i)}
-                  className="text-gray-400 hover:text-red-500 shrink-0 text-sm"
-                >
-                  ✕
-                </button>
+                <button type="button" onClick={() => removeConstraint(i)} className="text-gray-400 hover:text-red-500 shrink-0 text-[10px]">✕</button>
               </div>
             )
           )}
         </div>
 
         {/* Prefer pairs */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-600">
+            <span className="text-[10px] font-medium text-emerald-600">
               ✅ Works well together ({preferConstraints.length}/{MAX_CONSTRAINTS})
             </span>
             <button
               type="button"
               disabled={preferConstraints.length >= MAX_CONSTRAINTS || members.length < 2}
               onClick={() => addConstraint("prefer")}
-              className="text-xs text-emerald-600 hover:text-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-[10px] text-emerald-600 hover:text-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              + Add pair
+              + Add
             </button>
           </div>
           {constraints.map((c, i) =>
             c.type !== "prefer" ? null : (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex items-center gap-1">
                 <select
                   value={c.memberIdA}
                   onChange={(e) => updateConstraint(i, { memberIdA: e.target.value })}
-                  className="flex-1 rounded-md border border-gray-200 text-xs px-2 py-1.5 bg-white text-gray-700"
+                  className="flex-1 rounded border border-gray-200 text-[10px] px-1.5 py-1 bg-white text-gray-700 min-w-0"
                 >
-                  <option value="">— Member A —</option>
+                  <option value="">Member A</option>
                   {members.map((m) => (
-                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdB}>
-                      {m.name}
-                    </option>
+                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdB}>{m.name}</option>
                   ))}
                 </select>
-                <span className="text-xs text-gray-400 shrink-0">with</span>
+                <span className="text-[10px] text-gray-400 shrink-0">+</span>
                 <select
                   value={c.memberIdB}
                   onChange={(e) => updateConstraint(i, { memberIdB: e.target.value })}
-                  className="flex-1 rounded-md border border-gray-200 text-xs px-2 py-1.5 bg-white text-gray-700"
+                  className="flex-1 rounded border border-gray-200 text-[10px] px-1.5 py-1 bg-white text-gray-700 min-w-0"
                 >
-                  <option value="">— Member B —</option>
+                  <option value="">Member B</option>
                   {members.map((m) => (
-                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdA}>
-                      {m.name}
-                    </option>
+                    <option key={m.id} value={m.id} disabled={m.id === c.memberIdA}>{m.name}</option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={() => removeConstraint(i)}
-                  className="text-gray-400 hover:text-red-500 shrink-0 text-sm"
-                >
-                  ✕
-                </button>
+                <button type="button" onClick={() => removeConstraint(i)} className="text-gray-400 hover:text-red-500 shrink-0 text-[10px]">✕</button>
               </div>
             )
           )}
@@ -277,12 +254,12 @@ export function RandomizerPanel() {
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">{error}</p>
+        <p className="rounded-md bg-red-50 border border-red-200 px-2 py-1.5 text-[11px] text-red-600">{error}</p>
       )}
 
       <ConflictBanner conflicts={conflicts} />
 
-      <Button onClick={handleGenerate} loading={isGenerating} size="lg">
+      <Button onClick={handleGenerate} loading={isGenerating} size="sm" className="w-full">
         Generate Teams
       </Button>
     </div>
