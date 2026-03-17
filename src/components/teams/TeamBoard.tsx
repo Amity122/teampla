@@ -15,18 +15,21 @@ import { TeamCard } from "./TeamCard";
 import { MemberCard } from "./MemberCard";
 import { Button } from "@/components/ui/Button";
 import { useTeamsStore } from "@/store/teamsStore";
+import { useRandomizerStore } from "@/store/randomizerStore";
 import type { Member } from "@/lib/types";
 
 export function TeamBoard() {
   const {
     currentTeams,
     swapHistory,
-    lastSwapWarning,
+    lastSwapWarnings,
     swapMembersBetweenTeams,
     undoLastSwap,
     resetToGenerated,
     clearWarning,
   } = useTeamsStore();
+
+  const pairingConstraints = useRandomizerStore((s) => s.config.pairingConstraints);
 
   const [activeMember, setActiveMember] = useState<{ member: Member; teamId: string } | null>(null);
   const [dropError, setDropError] = useState<string | null>(null);
@@ -75,7 +78,7 @@ export function TeamBoard() {
 
     if (!toMemberId || fromTeamId === toTeamId) return;
 
-    swapMembersBetweenTeams(fromMemberId, fromTeamId, toMemberId, toTeamId);
+    swapMembersBetweenTeams(fromMemberId, fromTeamId, toMemberId, toTeamId, pairingConstraints);
   }
 
   if (currentTeams.length === 0) {
@@ -108,12 +111,30 @@ export function TeamBoard() {
         </Button>
       </div>
 
-      {/* Skill imbalance warning */}
-      {lastSwapWarning && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-          <span>⚠️</span>
-          <span className="flex-1">{lastSwapWarning.message}</span>
-          <button onClick={clearWarning} className="text-amber-500 hover:text-amber-700 shrink-0">✕</button>
+      {/* Swap warnings */}
+      {lastSwapWarnings.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {lastSwapWarnings.map((w, i) => (
+            <div
+              key={i}
+              className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
+                w.type === "CONSTRAINT_VIOLATED"
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : "border-amber-200 bg-amber-50 text-amber-700"
+              }`}
+            >
+              <span>{w.type === "CONSTRAINT_VIOLATED" ? "🚫" : "⚠️"}</span>
+              <span className="flex-1">{w.message}</span>
+              {i === 0 && (
+                <button
+                  onClick={clearWarning}
+                  className="text-gray-400 hover:text-gray-600 shrink-0"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

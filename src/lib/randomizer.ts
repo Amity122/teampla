@@ -315,7 +315,7 @@ export function generateTeams(
 
 export type SwapResult = {
   teams: Team[];
-  warning?: { type: string; message: string };
+  warnings: { type: string; message: string }[];
 };
 
 export function swapMembers(
@@ -323,17 +323,18 @@ export function swapMembers(
   memberIdA: string,
   teamIdA: string,
   memberIdB: string,
-  teamIdB: string
+  teamIdB: string,
+  pairingConstraints?: PairingConstraint[]
 ): SwapResult {
   const updated = teams.map((t) => ({ ...t, members: [...t.members] }));
 
   const teamA = updated.find((t) => t.id === teamIdA);
   const teamB = updated.find((t) => t.id === teamIdB);
-  if (!teamA || !teamB) return { teams };
+  if (!teamA || !teamB) return { teams, warnings: [] };
 
   const idxA = teamA.members.findIndex((e) => e.member.id === memberIdA);
   const idxB = teamB.members.findIndex((e) => e.member.id === memberIdB);
-  if (idxA === -1 || idxB === -1) return { teams };
+  if (idxA === -1 || idxB === -1) return { teams, warnings: [] };
 
   const memberA = { ...teamA.members[idxA], manuallySwapped: true };
   const memberB = { ...teamB.members[idxB], manuallySwapped: true };
@@ -341,17 +342,42 @@ export function swapMembers(
   teamA.members[idxA] = { member: memberB.member, manuallySwapped: true };
   teamB.members[idxB] = { member: memberA.member, manuallySwapped: true };
 
+  const warnings: { type: string; message: string }[] = [];
+
   // Advisory skill-imbalance warning (non-blocking per PRD §3.3)
   const aIsSenior = SENIOR_LEVELS.includes(memberA.member.skillLevel);
   const bIsSenior = SENIOR_LEVELS.includes(memberB.member.skillLevel);
-  const warning =
-    aIsSenior !== bIsSenior
-      ? {
-          type: "SKILL_IMBALANCE",
-          message:
-            "This swap may create a skill imbalance — one team may gain more senior members than the other.",
-        }
-      : undefined;
+  if (aIsSenior !== bIsSenior) {
+    warnings.push({
+      type: "SKILL_IMBALANCE",
+      message: "This swap may create a skill imbalance — one team may gain more senior members than the other.",
+    });
+  }
 
-  return { teams: updated, warning };
+  // Pairing constraint warnings (non-blocking per PRD §3.5)
+  if (pairingConstraints?.length) {
+    for (const { memberIdA: cA, memberIdB: cB, type } of pairingConstraints) {
+      const teamOfA = updated.find((t) => t.members.some((e) => e.member.id === cA));
+      const teamOfB = updated.find((t) => t.members.some((e) => e.member.id === cB));
+      if (!teamOfA || !teamOfB) continue;
+
+      const nameA = teamOfA.members.find((e) => e.member.id === cA)!.member.name;
+      const nameB = teamOfB.members.find((e) => e.member.id === cB)!.member.name;
+      const sameTeam = teamOfA.id === teamOfB.id;
+
+      if (type === "avoid" && sameTeam) {
+        warnings.push({
+          type: "CONSTRAINT_VIOLATED",
+          message: `Avoid constraint violated: ${nameA} and ${nameB} are now on the same team.`,
+        });
+      } else if (type === "prefer" && !sameTeam) {
+        warnings.push({
+          type: "CONSTRAINT_VIOLATED",
+          message: `Prefer constraint violated: ${nameA} and ${nameB} are no longer on the same team.`,
+        });
+      }
+    }
+  }
+
+  return { teams: updated, warnings };
 }

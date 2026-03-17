@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { swapMembers } from "@/lib/randomizer";
-import type { ConflictInfo, Team } from "@/lib/types";
+import type { ConflictInfo, PairingConstraint, Team } from "@/lib/types";
 
 interface TeamsState {
   /** Live team state shown in the board UI */
@@ -15,8 +15,8 @@ interface TeamsState {
   conflicts: ConflictInfo[];
   /** Session ID of the current randomizer run */
   sessionId: string | null;
-  /** Advisory warning from the last swap */
-  lastSwapWarning: { type: string; message: string } | null;
+  /** Advisory warnings from the last swap */
+  lastSwapWarnings: { type: string; message: string }[];
 
   // Actions
   setGeneratedTeams: (teams: Team[], conflicts: ConflictInfo[], sessionId: string) => void;
@@ -24,7 +24,8 @@ interface TeamsState {
     memberIdA: string,
     teamIdA: string,
     memberIdB: string,
-    teamIdB: string
+    teamIdB: string,
+    pairingConstraints?: PairingConstraint[]
   ) => void;
   undoLastSwap: () => void;
   resetToGenerated: () => void;
@@ -37,7 +38,7 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
   swapHistory: [],
   conflicts: [],
   sessionId: null,
-  lastSwapWarning: null,
+  lastSwapWarnings: [],
 
   setGeneratedTeams(teams, conflicts, sessionId) {
     set({
@@ -46,23 +47,24 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
       swapHistory: [],
       conflicts,
       sessionId,
-      lastSwapWarning: null,
+      lastSwapWarnings: [],
     });
   },
 
-  swapMembersBetweenTeams(memberIdA, teamIdA, memberIdB, teamIdB) {
+  swapMembersBetweenTeams(memberIdA, teamIdA, memberIdB, teamIdB, pairingConstraints) {
     const { currentTeams, swapHistory } = get();
-    const { teams: updated, warning } = swapMembers(
+    const { teams: updated, warnings } = swapMembers(
       currentTeams,
       memberIdA,
       teamIdA,
       memberIdB,
-      teamIdB
+      teamIdB,
+      pairingConstraints
     );
     set({
       swapHistory: [...swapHistory, currentTeams],
       currentTeams: updated,
-      lastSwapWarning: warning ?? null,
+      lastSwapWarnings: warnings,
     });
   },
 
@@ -73,16 +75,16 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
     set({
       currentTeams: previous,
       swapHistory: swapHistory.slice(0, -1),
-      lastSwapWarning: null,
+      lastSwapWarnings: [],
     });
   },
 
   resetToGenerated() {
     const { generatedTeams } = get();
-    set({ currentTeams: generatedTeams, swapHistory: [], lastSwapWarning: null });
+    set({ currentTeams: generatedTeams, swapHistory: [], lastSwapWarnings: [] });
   },
 
   clearWarning() {
-    set({ lastSwapWarning: null });
+    set({ lastSwapWarnings: [] });
   },
 }));
