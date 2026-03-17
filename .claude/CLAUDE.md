@@ -245,22 +245,42 @@ Member logs in → Goes to "My Profile"
 
 ## 7. Technical Considerations
 
-### 7.1 Frontend
+### 7.1 Framework
 
-- Framework: React (or Next.js for SSR support)
-- Drag-and-drop: `dnd-kit` or `react-beautiful-dnd`
-- State management: Zustand or Redux Toolkit
+- **Next.js 15** (App Router) — unified frontend + backend in a single codebase
+- Deployed natively on **Vercel** (zero-config, no `vercel.json` required)
+- API Routes (`src/app/api/...`) replace a standalone backend server
 
-### 7.2 Backend
+### 7.2 Frontend
 
-- REST or GraphQL API
-- Auth: SSO (Google Workspace / Azure AD recommended for IT depts) or email invite
-- Database: SQLite
+- React 19 (bundled with Next.js 15)
+- Drag-and-drop: `@dnd-kit/core` + `@dnd-kit/sortable`
+- State management: **Zustand** (`teamsStore` for team/swap state, `randomizerStore` for config)
+- Styling: **Tailwind CSS v4**
+- Forms: **React Hook Form** + **Zod**
 
-### 7.3 Export
+### 7.3 Backend (API Routes)
 
-- Slack export: Plain text generation (no Slack API integration in v1 — copy-paste approach)
-- CSV: Client-side generation via `papaparse` or server-generated download
+- Next.js App Router API Routes — REST endpoints under `/api/`
+- ORM: **Prisma** (schema-first, type-safe)
+- Auth: SSO (Google Workspace / Azure AD recommended) or email invite — deferred to v1.1
+- Database: **SQLite** (local dev via `prisma/dev.db`), **Turso** or **Supabase** (production / Vercel)
+
+### 7.4 Validation
+
+- **Zod** schemas in `src/lib/validators.ts` — shared between server API routes and client-side forms
+
+### 7.5 Export
+
+- Slack export: Plain text generation in `src/lib/export.ts` — copy-paste approach (no Slack API)
+- CSV: Client-side generation via `src/lib/export.ts` + browser download
+- Plain text: Clipboard copy via `navigator.clipboard`
+
+### 7.6 Testing
+
+- **Vitest** + **React Testing Library**
+- Unit tests in `src/tests/` mirror PRD §12 test cases exactly
+- Run with: `npm test`
 
 ---
 
