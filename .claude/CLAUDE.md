@@ -152,7 +152,34 @@ Admins can save and reuse team configuration templates:
 
 ---
 
-### 3.5 Export
+### 3.5 Member Pairing Constraints
+
+Any logged-in user can specify member pairing preferences before running the randomizer. These are best-effort — the algorithm will attempt to honor them, and flags a `CONSTRAINT_VIOLATED` conflict if a pair cannot be resolved.
+
+#### 3.5.1 Constraint Types
+
+| Type | Description |
+|---|---|
+| **Prefer (works well together)** | The two members should be placed on the same team |
+| **Avoid (should not be on the same team)** | The two members should be placed on different teams |
+
+#### 3.5.2 Rules
+
+- Up to **7 pairs** per constraint type (prefer and avoid are tracked separately)
+- Both members in a pair must be in the active member pool; unresolvable pairs are silently skipped
+- Constraints are processed as a **post-distribution pass** — after the initial round-robin, the algorithm performs targeted swaps to satisfy each constraint
+- If a constraint cannot be honored (e.g., not enough teams to separate a pair, or no valid swap candidate), a `CONSTRAINT_VIOLATED` conflict is surfaced in the UI — teams are still generated
+
+#### 3.5.3 UI
+
+- Located in the **Randomizer Settings** panel under "Member Pairing Constraints"
+- Each row has two member dropdowns (Member A and Member B) and a remove button
+- Avoid pairs are labeled in red; prefer pairs in green
+- The dropdowns disable the already-selected member in the opposing field to prevent self-pairing
+
+---
+
+### 3.6 Export
 
 Generated teams can be exported in multiple formats:
 
@@ -308,7 +335,7 @@ User logs in → Goes to /members
 ## 10. Out of Scope (Future Versions)
 
 - Automated project count sync via Jira / Asana integration
-- Member-to-member preference matching ("I work well with X")
+- Member-to-member preference matching ("I work well with X") — **implemented in v1.0** as pairing constraints (see §3.5)
 - Historical team analytics (who has been teamed with whom)
 - Multi-department support
 - Slack bot integration for direct posting
