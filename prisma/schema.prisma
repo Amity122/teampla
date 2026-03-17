@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Note: SQLite does not support native enum types.
+// Enum values are stored as plain strings and validated at the Zod layer.
+
+model Member {
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  skillLevel         String   // "Junior" | "Mid-level" | "Senior" | "Lead"
+  primaryTeam        String   // "Backend" | "Frontend" | etc.
+  otherTeamName      String?
+  shift              String   // "Day Shift" | "Afternoon Shift" | "Night Shift"
+  weeklySchedule     Json     // { mon, tue, wed, thu, fri, sat, sun }
+  activeProjectCount Int      @default(0)
+  isAdmin            Boolean  @default(false)
+  updatedAt          DateTime @updatedAt @default(now())
+
+  teamLinks TeamMemberLink[]
+
+  @@map("member")
+}
+
+model GeneratedTeam {
+  id        String   @id @default(uuid())
+  name      String
+  sessionId String
+  presetId  String?
+  createdAt DateTime @default(now())
+
+  memberLinks TeamMemberLink[]
+
+  @@index([sessionId])
+  @@map("generated_team")
+}
+
+model TeamMemberLink {
+  teamId          String
+  memberId        String
+  manuallySwapped Boolean @default(false)
+
+  team   GeneratedTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  member Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, memberId])
+  @@map("team_member_link")
+}
+
+model Preset {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  config    Json     // RandomizerConfig snapshot
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@map("preset")
+}
