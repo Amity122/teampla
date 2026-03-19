@@ -25,8 +25,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     members: team.memberLinks.map((link) => ({
       member: {
         ...link.member,
+        updatedAt: link.member.updatedAt.toISOString(),
         weeklySchedule: link.member.weeklySchedule as WeeklySchedule,
-      } as Member,
+      } as unknown as Member,
       manuallySwapped: link.manuallySwapped,
     })),
   });

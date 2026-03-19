@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         ...link.member,
         weeklySchedule: link.member.weeklySchedule as WeeklySchedule,
         updatedAt: link.member.updatedAt.toISOString(),
-      } as Member,
+      } as unknown as Member,
       manuallySwapped: link.manuallySwapped,
     })),
   }));

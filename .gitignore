@@ -38,3 +38,5 @@ coverage/
 
 # Misc
 .vercel
+.claude/settings.local.json
+.vercel

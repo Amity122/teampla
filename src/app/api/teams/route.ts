@@ -30,7 +30,8 @@ export async function GET(req: NextRequest) {
         member: {
           ...link.member,
           weeklySchedule: link.member.weeklySchedule as WeeklySchedule,
-        } as Member,
+          updatedAt: link.member.updatedAt.toISOString(),
+        } as unknown as Member,
         manuallySwapped: link.manuallySwapped,
       })),
     }))

@@ -22,11 +22,11 @@ export async function POST(req: NextRequest) {
     ? await prisma.member.findMany({ where: { id: { in: config.memberIds } } })
     : await prisma.member.findMany();
 
-  const members: Member[] = rawMembers.map((m) => ({
+  const members = rawMembers.map((m) => ({
     ...m,
     weeklySchedule: m.weeklySchedule as WeeklySchedule,
     updatedAt: m.updatedAt.toISOString(),
-  }));
+  })) as unknown as Member[];
 
   const result = generateTeams(members, config);
 
